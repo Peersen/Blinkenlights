@@ -14,7 +14,7 @@ The PCB includes
 - reset Pins
 - Screw terminals for Vin and 5v rail of the arduino
 
-Other projects in this repository help to troubleshoot the main project:
+Other projects in this repository help to troubleshoot the main project
 - a dmx receiver making six Leds blink
 - a softwareSerial receiving arduino that sends received strings to the arduinos USB COM port
 
