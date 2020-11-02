@@ -14,7 +14,7 @@ PCB
 - spare poti connectors for later use
 - I2C Pins
 - reset Pins
-- Screw terminals for Vin and 5v rail of the arduino and DMX signal from the SN57176 tranceiverchip
+- Screw terminals for Vin and 5v rail of the arduino and DMX signal from the SN75176 tranceiverchip
 
 Other projects in this repository help to troubleshoot the main project
 - a dmx receiver making six Leds blink
