@@ -22,4 +22,5 @@ Other projects in this repository help to troubleshoot the main project
 
 To Start
 - if you use Platform IO: make sure to change " lib_extra_dirs = D:\ArduinoSketches\libraries" in PlatformIO.ini
-- install DMXserial Librarie by Matthias Hertel
+- install DMXserial Librarie by Matthias Hertel:
+  http://www.mathertel.de/Arduino/DMXSerial.aspx or https://github.com/mathertel/DmxSerial
