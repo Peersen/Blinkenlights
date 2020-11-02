@@ -7,12 +7,14 @@ It uses four potentiometers controlling:
 - range how far the lights fade out from Base LEvel
 - the amount of lights doing crazy stuff
 
-The PCB includes
-- Dip switch
+PCB
+- one sided for home-etching
+- Dip switch for dmx address
+- selector jumper to switch between sending and receiving dmx
 - spare poti connectors for later use
 - I2C Pins
 - reset Pins
-- Screw terminals for Vin and 5v rail of the arduino
+- Screw terminals for Vin and 5v rail of the arduino and DMX signal from the SN57176 tranceiverchip
 
 Other projects in this repository help to troubleshoot the main project
 - a dmx receiver making six Leds blink
