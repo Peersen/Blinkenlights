@@ -3,7 +3,7 @@
 
 /* TINKER HERE  */ 
 #define ARRAY_SIZE 24 // max 300 Objects on an Arduino Nano
-#define DEBUG true    // Debug and status information via Software serial
+#define DEBUG false    // Debug and status information via Software serial
 #define BAUD 57600   // baud of Software Serial
 
 #define RANGE_DIVIDER 2 // 1 -> pots.range / 1  2-> pots.range / 2
