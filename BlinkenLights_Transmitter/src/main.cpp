@@ -113,7 +113,11 @@ class Flashtime
               }
                else
               {
+<<<<<<< HEAD
                 //mySerial.println ("DeadZone !");
+=======
+                mySerial.println ("DeadZone !");
+>>>>>>> 6ee9f17d288cb004b73836b72552691cdfa32048
               }
             }
            
@@ -195,8 +199,13 @@ class Flashtime
             channel_to_flash = 0;
             last_flashtime = millis();
             flashPause = setFlashPause (flashpt);
+<<<<<<< HEAD
             //mySerial.print ("Flashpause : ");
             //mySerial.println (flashPause);
+=======
+            mySerial.print ("Flashpause : ");
+            mySerial.println (flashPause);
+>>>>>>> 6ee9f17d288cb004b73836b72552691cdfa32048
             fl_state = idle;
             //mySerial.println("flashover");
             break;
