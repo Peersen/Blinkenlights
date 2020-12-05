@@ -45,19 +45,19 @@ SoftwareSerial mySerial(2, 3); // RX, TX
 class Flashtime
 {
   /***
-   * method update gets value of Flashtime Poti 
+   * method update gets value of Flashtime Poti
    * returns a certain channel that has to be flashed, if idle return channel 0
    * has a state of idle, pick_Flashlight, Flashing and Flashtime_over
-   * when idle wait until wait_time is over, 
+   * when idle wait until wait_time is over,
    * then go to pick_flashlight,
    *  flahstime has an bool array of n Channels
    *  try to pick a light that hasnt been flashed, maybe take several efforts to do so, else go to idle
    *  if found a light to flash go to flashing for a flash_duration in ms
-   * 
-   * 
-   * 
-   * 
-   * 
+   *
+   *
+   *
+   *
+   *
    * ***/
   public:
     Flashtime (uint8_t flashpt)
@@ -88,7 +88,7 @@ class Flashtime
         {
           return false;
         }
-      } 
+      }
     }
     int getFlashLevel ()
     {
@@ -105,7 +105,7 @@ class Flashtime
       {
         digitalWrite(FLASHMODE_LED, HIGH);
       }
-      
+
         switch (fl_state)
         {
           case idle:
@@ -118,19 +118,20 @@ class Flashtime
             //mySerial.println(((millis()-last_flashtime)));
             //mySerial.print("Flashpause * 1024 : ");
             //mySerial.println(flashPause * 1024);
-            if (((millis()-last_flashtime)) > flashPause * 1024) // flashpt < 230 -> Dead Zone of poti, Flashfunktion disabled 
+            if (((millis()-last_flashtime)) > flashPause * 1024) // flashpt < 230 -> Dead Zone of poti, Flashfunktion disabled
             {
               if (flashpot < 230 )
-              {     
+              {
                 fl_state = pick_flashlight;
               }
                else
               {
                 //mySerial.println ("DeadZone !");
+>>>>>>> 3147318636de5ec67275b95205bc71ef3f6d8d07
               }
             }
-           
-            
+
+
             channel_to_flash = 0; //better safe then sorry
             //mySerial.println("idle");
             break;
@@ -142,7 +143,7 @@ class Flashtime
              * try FLASH_EFFORTS times to find a light that has not beens flashed
              * if so go to state flashing ans set channel_to_flash to randomly chosen channel, set flash_start_time = millis()
              * else go to state flash over
-             * 
+             *
              **/
             int efforts = 0;
             while (efforts < FLASH_EFFORTS)
@@ -154,23 +155,23 @@ class Flashtime
               if (lights_to_flash[ch])  // if its flashable...
               {
                 lights_to_flash[ch] = false;
-                
+
                 channel_to_flash = ch;
                 fl_state = flashing;          // set state to flashing
                 flashDurationIndividual = FLASH_DURATION_BASE + random(0, FLASH_DURATION_RANDOM_ADDED_MAX);
                 //mySerial.println(flashDurationIndividual);
                 efforts = FLASH_EFFORTS ;
                 flash_start_time = millis();
-               
+
               }
               else          // try again, note how many efforts we took
               {
                 efforts++;
               }
-             
+
             }
-            
-            /** cant find another available channel to flash -> done **/ 
+
+            /** cant find another available channel to flash -> done **/
             if (fl_state != flashing)
             {
               fl_state = flash_over;
@@ -185,7 +186,51 @@ class Flashtime
             //mySerial.println (channel_to_flash);
             /**
              * wait until FLASH_DURATION is over, then go back to state pick_flaslight
-             * 
+             *
+             **/
+            if ((millis() - flash_start_time) > flashDurationIndividual)
+            {
+              fl_state = pick_flashlight;
+              //mySerial.println ("done Flashing");
+            }
+            break;
+          }
+          case flash_over :
+          {
+            //mySerial.print("entering flashover...  ");
+            /**
+             * reset lights_to_flash[] to be all true, set state to idle
+             * set last_flashtime = millis()
+             **/
+            for (int i = 0; i < FLASHTIME_CHANNEL_SIZE; i++)
+            {
+              lights_to_flash [i] = true;
+            }
+            channel_to_flash = 0;
+            last_flashtime = millis();
+            flashPause = setFlashPause (flashpt);
+            //mySerial.print ("Flashpause : ");
+            //mySerial.println (flashPause);
+            fl_state = idle;
+            //mySerial.println("flashover");
+            break;
+          }
+          default:
+          {
+            //mySerial.println("default");
+            break;
+          }
+        }
+      return channel_to_flash;
+    }
+
+          case flashing :
+          {
+            //mySerial.print("flashing channel : ");
+            //mySerial.println (channel_to_flash);
+            /**
+             * wait until FLASH_DURATION is over, then go back to state pick_flaslight
+             *
              **/
             if ((millis() - flash_start_time) > flashDurationIndividual)
             {
@@ -241,12 +286,12 @@ class Flashtime
       /** Exponential **/
       // add randomness to flashpoti, flashpause follows exponential growth 3,5^x * 0. 01 * random(1, FLASHPAUSE_RANDOMNES_PERCENT)
       //float flp = pow(flashpoti, 2) * 200 ; //* (1 + 0.01 * random (1, FLASHPAUSE_RANDOMNES_PERCENT));
-      
+
       /** linear **/
-      
+
       int flp = map (flashpoti, 0, 255, 0, MAX_FLASH_PAUSE );
       int flpint = flp;
-      
+
       /** Logadingsbums  **/
       /**
       float flp = log (flashpoti) * 1 ;
@@ -254,7 +299,43 @@ class Flashtime
       mySerial.print("flp : ");
       mySerial.println(flpint);
       **/
-      
+
+      return flpint;
+
+    }
+};
+
+  private:
+    bool lights_to_flash [FLASHTIME_CHANNEL_SIZE] ;
+    int flashDurationIndividual;
+    int flashPause;
+    unsigned long last_millis ;
+    unsigned long last_flashtime;
+    unsigned long flash_start_time;
+    int last_flshtm ;
+    uint8_t flashpot;
+    int channel_to_flash;
+    enum flashstate {idle, pick_flashlight, flashing, flash_over} fl_state;
+
+    int setFlashPause(uint8_t flashpoti)
+    {
+      /** Exponential **/
+      // add randomness to flashpoti, flashpause follows exponential growth 3,5^x * 0. 01 * random(1, FLASHPAUSE_RANDOMNES_PERCENT)
+      //float flp = pow(flashpoti, 2) * 200 ; //* (1 + 0.01 * random (1, FLASHPAUSE_RANDOMNES_PERCENT));
+
+      /** linear **/
+
+      int flp = map (flashpoti, 0, 255, 0, MAX_FLASH_PAUSE );
+      int flpint = flp;
+
+      /** Logadingsbums  **/
+      /**
+      float flp = log (flashpoti) * 1 ;
+      int flpint = (int) flp;
+      mySerial.print("flp : ");
+      mySerial.println(flpint);
+      **/
+
       return flpint;
 
     }
@@ -275,12 +356,12 @@ int address ;
 LightRoom lightroom(CHANNELS);
 potis getPotis ();
 
-void setup() 
+void setup()
 {
   pinMode(FLASHMODE_LED, OUTPUT);   // FLASHMODE_LED
   randomSeed(analogRead(A7)); // ADC SPARE 2
   setupDIP();
-  address = getDMXaddress(); 
+  address = getDMXaddress();
   if (DMX_RECEIVER)
   {
      DMXSerial.init(DMXReceiver);
@@ -297,7 +378,7 @@ unsigned long loopTimer;
 byte flashpoti = (analogRead(ADC_FLASH_TIME) >> 2);
 Flashtime flash_gordon(flashpoti);
 
-void loop() 
+void loop()
 {
   loopTimer = millis();
   flashpoti = (analogRead(ADC_FLASH_TIME) >> 2);
@@ -309,12 +390,12 @@ void loop()
       lightroom.update(128, 200, 255, 255);
     }
     else
-    { 
+    {
       int lewel = (analogRead(ADC_LEVEL)>>2);
       byte lvl = (byte) map (lewel, 0, 255, 40, 215);
       lightroom.update(lvl, analogRead(ADC_DENSITY)>>2, analogRead(ADC_SPEED)>>2, analogRead(ADC_SPREAD)>>2);
     }
-    for (uint8_t i = 0; i < CHANNELS; i++) 
+    for (uint8_t i = 0; i < CHANNELS; i++)
     {
       if ( i == flashChannel && flash_gordon.isflashing() ) // getState is true when flashing...
       {
@@ -322,8 +403,8 @@ void loop()
       }
       else
       {
-        DMXSerial.write(i + address, lightroom.getDMX(i));  
-      }    
+        DMXSerial.write(i + address, lightroom.getDMX(i));
+      }
       //mySerial.print("DMX Adress : ");
       //mySerial.println(address);
 
