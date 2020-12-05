@@ -127,7 +127,6 @@ class Flashtime
                else
               {
                 //mySerial.println ("DeadZone !");
->>>>>>> 3147318636de5ec67275b95205bc71ef3f6d8d07
               }
             }
 
