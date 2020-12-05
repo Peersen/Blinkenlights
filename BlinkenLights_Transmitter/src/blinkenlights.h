@@ -7,8 +7,10 @@
 #define BAUD 57600   // baud of Software Serial
 
 #define RANGE_DIVIDER 2 // 1 -> pots.range / 1  2-> pots.range / 2
+#define RANGE_RANDOMNES_PERCENTAGE 50 //
 #define SPEED_MULTIPLIER 5 // 
 #define SPEED_DIVIDER 20 // Higher = faster
+#define MIN_FADE_STEP_TIME 500
 #define SPEED_STEPTIME_RANDOM_ADDED_MS 4
 /* TINKER HERE  */
 
@@ -16,7 +18,7 @@
 #include "Arduino.h"
 #include <SoftwareSerial.h>
 
-SoftwareSerial mySerial(2, 3); // RX, TX
+// SoftwareSerial mySerial(2, 3); // RX, TX
 
 // Struct that is handed over between Lights and Lightroom Objects
   struct settings
@@ -43,12 +45,15 @@ class Light
 public:
   Light()
   {
+    mySerial.println("Light startet");
     state = idle ;
     randomSeed(analogRead(A0));
     // maybe set a standard deviation from base level here to have an individual level for this light
   }
   void tick(settings pots)
   {
+    //mySerial.print("Level : ");
+    //mySerial.println(pots.level);
     //pots = pots;
       if (state)  // not idle
       { //increment state machine
@@ -144,8 +149,12 @@ public:
     }
         
     // pick a random range to fade, reduce the fade Size by RANGE_DIVIDER overall, then add some randomnes to the resulting value
-    int range = int ((pots.range / RANGE_DIVIDER) * (0.01 * random (10, 101)));
+    // int range = int ((pots.range / RANGE_DIVIDER) * (0.01 * random (10, RANGE_RANDOMNES_PERCENTAGE)));
     
+    /***  NEW IDEA ***/
+    int mapped_range = map (pots.range, 0, 255, 1, 100);
+    float range = params.baseLevel * 0.01 * mapped_range * (0.01 * random (0, RANGE_RANDOMNES_PERCENTAGE +1));
+
     if (!params.fadeDirection) // if negative
     {
       range = range * -1 ;
@@ -171,11 +180,19 @@ public:
     
     /******FADE SPEED*******/
 
-    params.fadeOutSpeed = (255 - pots.speed) /SPEED_DIVIDER  + random(0, SPEED_STEPTIME_RANDOM_ADDED_MS) ;
-    params.fadeBackSpeed = (255 - pots.speed) /SPEED_DIVIDER + random(0, SPEED_STEPTIME_RANDOM_ADDED_MS);
+    // params.fadeOutSpeed = (255 - pots.speed) /SPEED_DIVIDER  + random(0, SPEED_STEPTIME_RANDOM_ADDED_MS) ;
+    // params.fadeBackSpeed = (255 - pots.speed) /SPEED_DIVIDER + random(0, SPEED_STEPTIME_RANDOM_ADDED_MS);
 
+    /*** NEW IDEA ****/
+    // function like f)x) = -ax + b // b= MIN_FADE_STEP_TIME a= - (MIN_FADE_STEP_TIME/255.0) 
+    //float fos = (-(MIN_FADE_STEP_TIME/255.0) * pots.speed + MIN_FADE_STEP_TIME); // add randomness !!!
+    //float fbs = (-(MIN_FADE_STEP_TIME/255.0) * pots.speed + MIN_FADE_STEP_TIME); 
+    /****   Brand NEW IDEA ***/
+    float fos = 500.0 / (pots.speed +1);
+    float fbs = 500.0 / (pots.speed +1);
+    params.fadeOutSpeed = byte(fos);
+    params.fadeBackSpeed = byte(fbs);
 
-   
     params.lastMillis = millis();
   }
   bool fadeOut()
@@ -258,21 +275,27 @@ class LightRoom
 {
   public:
     //constructor
-    LightRoom(uint8_t lightsCount) // init with CHANNELS 1-ARRAY_SIZE
+    LightRoom(uint8_t channels) // init with CHANNELS 1-ARRAY_SIZE
     {
       randomSeed(analogRead(0));
       pots.level = 0;
       pots.density = 0;
       pots.speed = 0;
       pots.range = 0;
-      lightsCounter = lightsCount -1 ; // lights counter goes from 0 to CHANNELS -1
-      if (DEBUG)
+      lightsCounter = channels -1 ; // lights counter goes from 0 to CHANNELS -1
+      if (true)
       {
         setupSS();
       }  
     }
     void update (uint8_t level, uint8_t density, uint8_t speed, uint8_t range)
     {
+      /***
+       * Flsh time mode integrieren
+       * es sollen abhängig vom Flashtime Regler nach einer längeren Zeit alle lampen der Reihe nach für eine feste Zeit
+       * geflasht werden.
+       * 
+       * */
       pots.level = level;       // base level for all lights
       pots.density = density;   // number of lights doing something
       pots.range = range;       // how far a fade moves from base level in average
@@ -280,7 +303,7 @@ class LightRoom
 
       // get state of all lights and see if we need to fire up more lightruns based on density pot
       uint8_t lightsActive = 0;
-      for (uint8_t i = 0; i < lightsCounter; i++ )
+      for (int i = 0; i <= lightsCounter; i++ )
       {
         if (lightArr[i].getState()) // if its alredy active
         {
@@ -290,11 +313,11 @@ class LightRoom
 
       // fireUp a random light that isnt already running, if necessary. 
       // tell it the current pot values besides density by tick() method
-      uint8_t lightsToBeActive = map (pots.density, 0, 255, 0, lightsCounter+1 ); // map(value, fromLow, fromHigh, toLow, toHigh)
-      mySerial.print ("LightsTobE active : ");
-      mySerial.println (lightsToBeActive);
-      mySerial.print("lightsCoutner : ");
-      mySerial.println (lightsCounter);
+      uint8_t lightsToBeActive = map (pots.density, 0, 255, 0, lightsCounter+1 ); // map(value, fromLow, fromHigh, toLow, toHigh) // LightsToBeActive can be 0 to lightscounter + 1
+      //mySerial.print ("LightsTobE active : ");
+      //mySerial.println (lightsToBeActive);
+      //mySerial.print("lightsCoutner : ");
+      //mySerial.println (lightsCounter);
 // --->>> Loop of Death if density = 255 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       while (lightsToBeActive > lightsActive)
       {
